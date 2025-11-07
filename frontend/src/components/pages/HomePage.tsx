@@ -5,14 +5,16 @@ import CreateReportSection from "../sections/CreateReportSection";
 import UserProfileSection from "../sections/UserProfileSection";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Bell } from "lucide-react";
+import { Bell, ClipboardList } from "lucide-react";
 import { NotificationModal } from "@/components/modals/NotificationModal";
+import { LogsModal } from "@/components/modals/LogsModal";
 import { api } from "@/api/axiosInstance";
 import { toast } from "sonner";
 
 export default function HomePage() {
   const [openNotifications, setOpenNotifications] = useState(false);
-   const [unreadCount, setUnreadCount] = useState(0);
+  const [openLogs, setOpenLogs] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const fetchUnreadCount = async () => {
@@ -29,8 +31,17 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-neutral-100 via-white to-neutral-200 dark:from-neutral-900 dark:via-neutral-950 dark:to-black py-12 px-4 md:px-8 lg:px-16 transition-colors duration-500">
-      <header className="text-center mb-10 relative">
-        <div className="absolute top-0 right-0">
+      <header className="flex flex-col items-center mb-10 space-y-2">
+        <div className="w-full flex justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setOpenLogs(true)}
+            className="relative"
+          >
+            <ClipboardList className="h-5 w-5" />
+          </Button>
+
           <Button
             variant="ghost"
             size="icon"
@@ -47,13 +58,15 @@ export default function HomePage() {
           </Button>
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-bold bg-linear-to-r from-[#800000] via-[#b22222] to-[#800000] bg-clip-text text-transparent">
-          Lost & Found Management System
-        </h1>
-        <p className="text-base md:text-lg text-muted-foreground mt-3 max-w-2xl mx-auto leading-relaxed">
-          Submit or browse reports of lost and found items. Help reunite people
-          with their belongings one item at a time.
-        </p>
+        <div className="text-center mt-2">
+          <h1 className="text-4xl md:text-5xl font-bold bg-linear-to-r from-[#800000] via-[#b22222] to-[#800000] bg-clip-text text-transparent">
+            Lost & Found Management System
+          </h1>
+          <p className="text-base md:text-lg text-muted-foreground mt-3 max-w-2xl mx-auto leading-relaxed">
+            Submit or browse reports of lost and found items. Help reunite
+            people with their belongings one item at a time.
+          </p>
+        </div>
       </header>
 
       <Separator className="my-8 max-w-5xl mx-auto opacity-60" />
@@ -77,6 +90,7 @@ export default function HomePage() {
         open={openNotifications}
         onClose={() => setOpenNotifications(false)}
       />
+      <LogsModal open={openLogs} onClose={() => setOpenLogs(false)} />
     </div>
   );
 }

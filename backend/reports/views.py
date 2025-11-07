@@ -208,5 +208,32 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="unread-count")
     def unread_count(self, request):
-        count = Notification.objects.filter(user=request.user, is_read=False).count()
-        return Response({"unread_count": count})
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT get_unread_notification_count(%s);", [request.user.id])
+            unread_count = cursor.fetchone()[0]
+
+        return Response({"unread_count": unread_count})
+    
+class ReportResolutionLogViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ReportResolutionLog.objects.select_related("report", "resolved_by", "claimed_by").order_by("-date_resolved")
+    serializer_class = ReportResolutionLogSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return self.queryset
+        return self.queryset.filter(report__reported_by=user)
+
+
+class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ActivityLog.objects.select_related("user", "report", "notification").order_by("-created_at")
+    serializer_class = ActivityLogSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return self.queryset
+        return self.queryset.filter(user=user)
+

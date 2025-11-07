@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Report, LostItem, FoundItem, Comment, Claim, Notification
+from .models import Report, LostItem, FoundItem, Comment, Claim, Notification, ActivityLog, ReportResolutionLog
 from django.contrib.auth import get_user_model
 
 User = get_user_model()  # This will get the correct User model
@@ -71,4 +71,60 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = "__all__"
+
+class UserMiniSerializer(serializers.ModelSerializer):
+    """Minimal user info for nested display"""
+    full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ["id", "first_name", "last_name", "username", "email", "full_name"]
+
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip()
+
+
+# ----------------------------
+# ReportResolutionLog Serializer
+# ----------------------------
+class ReportResolutionLogSerializer(serializers.ModelSerializer):
+    report = ReportSerializer(read_only=True)
+    resolved_by = UserMiniSerializer(read_only=True)
+    claimed_by = UserMiniSerializer(read_only=True)
+
+    class Meta:
+        model = ReportResolutionLog
+        fields = [
+            "id",
+            "report",
+            "resolved_by",
+            "claimed_by",
+            "receiver_name",
+            "giver_name",
+            "report_title",
+            "date_resolved",
+        ]
+
+
+# ----------------------------
+# ActivityLog Serializer
+# ----------------------------
+class ActivityLogSerializer(serializers.ModelSerializer):
+    user = UserMiniSerializer(read_only=True)
+    notification = NotificationSerializer(read_only=True)
+    report = ReportSerializer(read_only=True)
+
+    class Meta:
+        model = ActivityLog
+        fields = [
+            "id",
+            "notification",
+            "user",
+            "report",
+            "report_type",
+            "action",
+            "user_full_name",
+            "item_name",
+            "created_at",
+        ]
 

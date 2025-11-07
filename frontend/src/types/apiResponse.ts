@@ -102,3 +102,39 @@ export type PaginatedResponse<T> = {
   previous: string | null;
   results: T[];
 };
+
+export interface ReportResolutionLog {
+  id: number;
+  report: Report;
+  resolved_by: UserMini;
+  claimed_by?: UserMini | null;
+  receiver_name: string;
+  giver_name: string;
+  report_title: string;
+  date_resolved: string; 
+}
+
+export interface ActivityLog {
+  id: number;
+  notification: Notification;
+  user: UserMini;
+  report?: Report | null;
+  report_type?: string | null;
+  action: string;
+  user_full_name: string;
+  item_name?: string | null;
+  created_at: string; 
+}
+
+export interface UserMini {
+  id: string;
+  first_name: string;
+  last_name: string;
+  username: string;
+  email: string;
+  full_name: string;
+}
+
+export type ReportResolutionLogResponse = PaginatedResponse<ReportResolutionLog>;
+export type ActivityLogResponse = PaginatedResponse<ActivityLog>;
+

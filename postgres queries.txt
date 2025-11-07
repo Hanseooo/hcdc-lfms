@@ -82,3 +82,53 @@ EXCEPTION
         RAISE;
 END;
 $$;
+
+
+--UDF!!!
+
+CREATE OR REPLACE FUNCTION get_unread_notification_count(p_user_id INTEGER)
+RETURNS INTEGER AS $$
+DECLARE
+    unread_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO unread_count
+    FROM notifications_notification
+    WHERE user_id = p_user_id AND is_read = FALSE;
+
+    RETURN unread_count;
+END;
+$$ LANGUAGE plpgsql;
+
+
+--TRIGGER!!!
+
+--STEP 1
+
+-- Drop and recreate the function safely
+DROP FUNCTION IF EXISTS get_unread_notification_count(UUID);
+
+CREATE OR REPLACE FUNCTION get_unread_notification_count(p_user_id UUID)
+RETURNS INTEGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    unread_count INTEGER;
+BEGIN
+    SELECT COUNT(*)
+    INTO unread_count
+    FROM reports_notification
+    WHERE user_id = p_user_id
+      AND is_read = FALSE;
+
+    RETURN unread_count;
+END;
+$$;
+
+
+--STEP 2
+
+CREATE TRIGGER trg_log_claim_activity
+AFTER INSERT ON reports_notification
+FOR EACH ROW
+EXECUTE FUNCTION log_claim_activity();
+

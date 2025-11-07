@@ -85,3 +85,18 @@ class ReportResolutionLog(models.Model):
 
     def __str__(self):
         return f"Resolution Log for Report #{self.report.id} - {self.report_title}"
+    
+class ActivityLog(models.Model):
+    notification = models.ForeignKey(Notification, on_delete=models.CASCADE, related_name="logs")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    report = models.ForeignKey(Report, on_delete=models.CASCADE, null=True, blank=True)
+    report_type = models.CharField(max_length=50, blank=True, null=True)
+    action = models.CharField(max_length=255)
+    user_full_name = models.CharField(max_length=255)
+    item_name = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "activity_logs"
+        ordering = ["-created_at"]
+
