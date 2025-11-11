@@ -1,5 +1,5 @@
 from rest_framework import viewsets, permissions, status, filters
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 import cloudinary.uploader
 
@@ -15,6 +15,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from django.db import connection
 from rest_framework.decorators import api_view, permission_classes
+from django.db import connection
+from rest_framework import status as http_status
+import psycopg2
+from django.conf import settings
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+
 
 
 class ReportViewSet(viewsets.ModelViewSet):
@@ -101,6 +107,7 @@ class ReportViewSet(viewsets.ModelViewSet):
 
         Notification.objects.create(
             user=report.reported_by,
+            triggered_by=request.user,
             message=f"{request.user.first_name} {request.user.last_name} wants to claim the found item.",
             detailed_message=message,
             related_report=report
@@ -121,6 +128,7 @@ class ReportViewSet(viewsets.ModelViewSet):
 
         Notification.objects.create(
             user=report.reported_by,
+            triggered_by=request.user,
             message=f"{request.user.first_name} {request.user.last_name} reported finding your lost item.",
             detailed_message=message,
             related_report=report
@@ -128,27 +136,66 @@ class ReportViewSet(viewsets.ModelViewSet):
 
         return Response({"status": "item found notification sent"})
     
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def resolve_report_view(request, report_id):
-    """
-    Resolve a report using the stored procedure in PostgreSQL.
-    """
     owner_id = request.user.id
     claimant_id = request.data.get("claimant_id")
 
     if not claimant_id:
-        return Response({"error": "Claimant ID is required."}, status=400)
-
+        return Response(
+            {"error": "Claimant ID is required."}, 
+            status=http_status.HTTP_400_BAD_REQUEST
+        )
+    
+    conn = None
+    cursor = None
+    
     try:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "CALL resolve_report_and_log(%s, %s, %s);",
-                [report_id, str(owner_id), str(claimant_id)]
-            )
-        return Response({"message": "Report successfully resolved and logged."})
+        # Get database config from settings
+        db_config = settings.DATABASES['default']
+        
+        # Create a new connection outside Django's connection pool
+        conn = psycopg2.connect(
+            dbname=db_config['NAME'],
+            user=db_config['USER'],
+            password=db_config['PASSWORD'],
+            host=db_config['HOST'],
+            port=db_config['PORT']
+        )
+        
+        # CRITICAL: Set isolation level to AUTOCOMMIT
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        
+        cursor = conn.cursor()
+        cursor.execute(
+            "CALL resolve_report_and_log(%s, %s, %s);",
+            [report_id, str(owner_id), str(claimant_id)]
+        )
+        
+        return Response(
+            {"message": "Report successfully resolved and logged."},
+            status=http_status.HTTP_200_OK
+        )
+        
     except Exception as e:
-        return Response({"error": str(e)}, status=500)
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error resolving report {report_id}: {str(e)}")
+        
+        return Response(
+            {"error": str(e)}, 
+            status=http_status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+        
+    finally:
+        # Clean up resources
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 
 class CommentViewSet(viewsets.ModelViewSet):

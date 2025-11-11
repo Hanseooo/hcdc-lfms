@@ -68,12 +68,14 @@ class NotificationSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     related_report = ReportSerializer(read_only=True)
     claimed_by = serializers.SerializerMethodField()
+    triggered_by = UserSerializer(read_only=True)
 
     class Meta:
         model = Notification
         fields = [
             "id",
             "user",
+            "triggered_by",
             "message",
             "detailed_message",
             "related_report",
@@ -94,6 +96,7 @@ class NotificationSerializer(serializers.ModelSerializer):
                 "first_name": claim.claimed_by.first_name,
                 "last_name": claim.claimed_by.last_name,
             }
+
         return None
 
 

@@ -13,5 +13,5 @@ router.register(r"activity-logs", ActivityLogViewSet, basename="activity-log")
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("reports/<int:report_id>/resolve/", resolve_report_view, name="resolve-report"),
+    path('reports/<int:report_id>/resolve/', resolve_report_view),
 ]

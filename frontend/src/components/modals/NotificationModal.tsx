@@ -51,15 +51,17 @@ export function NotificationModal({ open, onClose }: NotificationModalProps) {
     }
   };
 
-  const resolveReport = async (reportId: number, claimantId: string) => {
-    console.log("1")
+  const resolveReport = async (reportId: number, claimantId: string, notifId: number) => {
+    console.log("Resolving report:", reportId, "Claimant:", claimantId);
     try {
       await api.post(`/reports/reports/${reportId}/resolve/`, {
         claimant_id: claimantId,
       });
       toast.success("Report marked as resolved");
       fetchNotifications();
-    } catch {
+      markAsRead(notifId); 
+    } catch (error) {
+      console.error("Resolution error:", error);
       toast.error("Failed to resolve report");
     }
   };
@@ -158,25 +160,22 @@ export function NotificationModal({ open, onClose }: NotificationModalProps) {
                             size="sm"
                             className="text-xs text-green-600 border-green-600/30 hover:bg-green-600/10 hover:text-green-700"
                             onClick={() => {
-                              const reportId = notif.related_report?.id;
-                              const claimantId =
-                                (notif.related_report as any)?.claimed_by?.id ??
-                                (notif as any)?.claimed_by?.id;
+                                const reportId = notif.related_report?.id;
+                                const claimantId = notif.triggered_by?.id; // Use triggered_by
 
-                              if (!reportId) {
-                                console.log("missing report id")
-                                toast.error("Missing report ID");
-                                return;
-                              }
+                                if (!reportId) {
+                                  toast.error("Missing report ID");
+                                  return;
+                                }
 
-                              if (!claimantId) {
-                                console.log("missing claimant id");
+                                if (!claimantId) {
+                                  toast.error(
+                                    "No claimant information available"
+                                  );
+                                  return;
+                                }
 
-                                toast.error("Missing claimant ID");
-                                return;
-                              }
-
-                              resolveReport(reportId, claimantId);
+                                resolveReport(reportId, claimantId, notif.id);
                             }}
                           >
                             <CheckCircle2 className="h-4 w-4 mr-1" />

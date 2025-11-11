@@ -1,9 +1,5 @@
---TRANSACTION!!!!!!
-
--- Drop existing procedure if it exists
 DROP PROCEDURE IF EXISTS resolve_report_and_log(INTEGER, UUID, UUID);
 
--- Create new procedure
 CREATE OR REPLACE PROCEDURE resolve_report_and_log(
     p_report_id INTEGER,
     p_owner_id UUID,
@@ -16,10 +12,10 @@ DECLARE
     v_owner_name TEXT;
     v_claimant_name TEXT;
 BEGIN
-    -- Lock the report row for update to prevent concurrent modifications
+    -- Lock the report row
     PERFORM 1 FROM reports_report WHERE id = p_report_id FOR UPDATE;
     
-    -- Get the report title for logging
+    -- Get the report title
     SELECT 
         CASE
             WHEN r.type = 'lost' THEN li.item_name
@@ -32,7 +28,11 @@ BEGIN
     LEFT JOIN reports_founditem fi ON fi.report_id = r.id
     WHERE r.id = p_report_id;
     
-    -- Update report status to resolved
+    IF v_report_title IS NULL THEN
+        RAISE EXCEPTION 'Report % not found or has no item name', p_report_id;
+    END IF;
+    
+    -- Update report status
     UPDATE reports_report
     SET status = 'resolved'
     WHERE id = p_report_id;
@@ -41,7 +41,7 @@ BEGIN
         RAISE EXCEPTION 'Report with id % not found', p_report_id;
     END IF;
     
-    -- Get user names for clarity in the log
+    -- Get user names
     SELECT CONCAT(first_name, ' ', last_name)
     INTO v_owner_name
     FROM accounts_user
@@ -52,34 +52,28 @@ BEGIN
     FROM accounts_user
     WHERE id = p_claimant_id;
     
-    -- Insert a log entry
+    -- Insert into log
     INSERT INTO reports_reportresolutionlog (
         report_id,
         resolved_by_id,
         claimed_by_id,
+        receiver_name,
+        giver_name,
         report_title,
-        resolved_by_name,
-        claimed_by_name,
         date_resolved
     )
     VALUES (
         p_report_id,
         p_owner_id,
         p_claimant_id,
-        v_report_title,
         v_owner_name,
         v_claimant_name,
+        v_report_title,
         NOW()
     );
     
-    -- Commit the transaction (optional - will auto-commit if no exception)
+    -- Explicit commit
     COMMIT;
-    
-EXCEPTION
-    WHEN OTHERS THEN
-        -- Rollback on any failure
-        ROLLBACK;
-        RAISE;
 END;
 $$;
 

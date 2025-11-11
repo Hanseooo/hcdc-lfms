@@ -7,13 +7,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { api } from "@/api/axiosInstance";
 import { toast } from "sonner";
-import type { ActivityLog, ReportResolutionLog } from "@/types/apiResponse";
-import { Loader2 } from "lucide-react";
+import type { ReportResolutionLog } from "@/types/apiResponse";
+import {
+  Loader2,
+  CalendarDays,
+  Package,
+  UserCheck,
+  UserRound,
+  Tag,
+} from "lucide-react";
 
 interface LogsModalProps {
   open: boolean;
@@ -22,26 +30,21 @@ interface LogsModalProps {
 
 export function LogsModal({ open, onClose }: LogsModalProps) {
   const [loading, setLoading] = useState(false);
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [resolutionLogs, setResolutionLogs] = useState<ReportResolutionLog[]>(
     []
   );
 
   useEffect(() => {
-    if (open) fetchLogs();
+    if (open) fetchResolutionLogs();
   }, [open]);
 
-  const fetchLogs = async () => {
+  const fetchResolutionLogs = async () => {
     try {
       setLoading(true);
-      const [activityRes, resolutionRes] = await Promise.all([
-        api.get(`/reports/activity-logs/`),
-        api.get(`/reports/resolution-logs/`),
-      ]);
-      setActivityLogs(activityRes.data.results || []);
-      setResolutionLogs(resolutionRes.data.results || []);
+      const res = await api.get(`/reports/resolution-logs/`);
+      setResolutionLogs(res.data.results || []);
     } catch {
-      toast.error("Failed to fetch logs");
+      toast.error("Failed to fetch resolution logs");
     } finally {
       setLoading(false);
     }
@@ -49,10 +52,10 @@ export function LogsModal({ open, onClose }: LogsModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl h-[80vh] flex flex-col dark:bg-neutral-950 bg-white">
+      <DialogContent className="max-w-3xl h-[80vh] flex flex-col dark:bg-neutral-950 bg-background">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-center">
-            System Logs
+            Resolution Logs
           </DialogTitle>
         </DialogHeader>
 
@@ -61,82 +64,92 @@ export function LogsModal({ open, onClose }: LogsModalProps) {
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (
-          <Tabs defaultValue="activity" className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="activity">Activity Logs</TabsTrigger>
-              <TabsTrigger value="resolution">Resolution Logs</TabsTrigger>
-            </TabsList>
+          <ScrollArea className="h-[70vh] pr-2">
+            {resolutionLogs.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                No resolution logs found.
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {resolutionLogs.map((log) => {
+                  const typeColor =
+                    log.report.type === "lost"
+                      ? "bg-red-600/10 text-red-600 border-red-600/20"
+                      : "bg-green-600/10 text-green-600 border-green-600/20";
+                  const item =
+                    log.report.type === "lost"
+                      ? log.report.lost_item
+                      : log.report.found_item;
 
-            {/* Activity Logs */}
-            <TabsContent value="activity" className="flex-1">
-              <ScrollArea className="h-[60vh] pr-2">
-                {activityLogs.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4">
-                    No activity logs found.
-                  </p>
-                ) : (
-                  <ul className="space-y-3">
-                    {activityLogs.map((log) => (
-                      <li
-                        key={log.id}
-                        className="p-4 rounded-lg border bg-muted/30 dark:bg-neutral-900"
-                      >
-                        <div className="flex justify-between">
-                          <p className="font-medium">{log.action}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(log.created_at).toLocaleString()}
-                          </p>
+                  return (
+                    <Card
+                      key={log.id}
+                      className="border bg-foreground/5 dark:border-neutral-800 shadow-sm hover:shadow-md transition-all duration-200"
+                    >
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-base font-semibold flex items-center gap-2">
+                            <Package className="h-4 w-4 text-primary" />
+                            {item?.item_name || log.report_title}
+                          </CardTitle>
+                          <Badge variant="outline" className={typeColor}>
+                            {log.report.type.toUpperCase()}
+                          </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {log.user_full_name} – {log.item_name || "N/A"}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </ScrollArea>
-            </TabsContent>
-
-            {/* Resolution Logs */}
-            <TabsContent value="resolution" className="flex-1">
-              <ScrollArea className="h-[60vh] pr-2">
-                {resolutionLogs.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4">
-                    No resolution logs found.
-                  </p>
-                ) : (
-                  <ul className="space-y-3">
-                    {resolutionLogs.map((log) => (
-                      <li
-                        key={log.id}
-                        className="p-4 rounded-lg border bg-muted/30 dark:bg-neutral-900"
-                      >
-                        <div className="flex justify-between">
-                          <p className="font-medium">{log.report_title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(log.date_resolved).toLocaleString()}
-                          </p>
+                      </CardHeader>
+                      <CardContent className="space-y-2 text-sm text-muted-foreground">
+                        <div className="flex flex-wrap gap-x-4 gap-y-1">
+                          <div className="flex items-center gap-1">
+                            <Tag className="h-4 w-4" />
+                            <span>{item?.category || "N/A"}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <CalendarDays className="h-4 w-4" />
+                            <span>
+                              {new Date(log.date_resolved).toLocaleString()}
+                            </span>
+                          </div>
                         </div>
                         <Separator className="my-2" />
-                        <p className="text-sm text-muted-foreground">
-                          Resolved by: {log.resolved_by.full_name}
-                        </p>
-                        {log.claimed_by && (
-                          <p className="text-sm text-muted-foreground">
-                            Claimed by: {log.claimed_by.full_name}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-1">
+                          <p>
+                            <UserCheck className="inline h-4 w-4 mr-1" />
+                            <span className="font-medium text-foreground">
+                              Resolved by:
+                            </span>{" "}
+                            {log.resolved_by?.full_name}
                           </p>
-                        )}
-                        <p className="text-sm text-muted-foreground">
-                          Receiver: {log.receiver_name} | Giver:{" "}
-                          {log.giver_name}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </ScrollArea>
-            </TabsContent>
-          </Tabs>
+                          {log.claimed_by && (
+                            <p>
+                              <UserRound className="inline h-4 w-4 mr-1" />
+                              <span className="font-medium text-foreground">
+                                Claimed by:
+                              </span>{" "}
+                              {log.claimed_by?.full_name}
+                            </p>
+                          )}
+                          <p>
+                            <UserRound className="inline h-4 w-4 mr-1" />
+                            <span className="font-medium text-foreground">
+                              Received by:
+                            </span>{" "}
+                            {log.receiver_name}
+                          </p>
+                          <p>
+                            <UserRound className="inline h-4 w-4 mr-1" />
+                            <span className="font-medium text-foreground">
+                              Given by:
+                            </span>{" "}
+                            {log.giver_name}
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </ul>
+            )}
+          </ScrollArea>
         )}
       </DialogContent>
     </Dialog>

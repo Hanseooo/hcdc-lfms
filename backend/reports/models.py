@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings 
+from accounts.models import User
 
 class Report(models.Model):
     REPORT_TYPE_CHOICES = [
@@ -64,6 +65,7 @@ class Claim(models.Model):
 
 class Notification(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    triggered_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="triggered_notifications")
     message = models.CharField(max_length=255)
     detailed_message = models.TextField(blank=True, null=True)
     related_report = models.ForeignKey(Report, on_delete=models.SET_NULL, null=True, blank=True)

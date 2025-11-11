@@ -89,6 +89,7 @@ export interface Claim {
 export interface Notification {
   id: number;
   user: User;
+  triggered_by?: User | null; 
   message: string;
   detailed_message?: string | null;
   related_report?: Report | null;
