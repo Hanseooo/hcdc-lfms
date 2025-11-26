@@ -32,11 +32,24 @@ class ReportViewSet(viewsets.ModelViewSet):
     filterset_fields = ["type", "status"]
     
     def get_queryset(self):
-        # Start with the base queryset
         queryset = Report.objects.all().order_by("-date_time")
         
-        # Handle search manually
-        search = self.request.query_params.get('search')
+        # Get filters from query params
+        report_type = self.request.query_params.get("type")
+        category = self.request.query_params.get("category")
+        search = self.request.query_params.get("search")
+
+        if report_type:
+            queryset = queryset.filter(type=report_type)
+
+        # Filter category inside the nested lost_item / found_item
+        if category:
+            if report_type == "lost":
+                queryset = queryset.filter(lost_item__category=category)
+            elif report_type == "found":
+                queryset = queryset.filter(found_item__category=category)
+
+        # Search across item_name and description
         if search:
             queryset = queryset.filter(
                 Q(lost_item__item_name__icontains=search) |
@@ -44,38 +57,48 @@ class ReportViewSet(viewsets.ModelViewSet):
                 Q(lost_item__description__icontains=search) |
                 Q(found_item__description__icontains=search)
             )
-        
+
         return queryset
+
 
     def perform_create(self, serializer):
         file = self.request.data.get("photo")
         photo_url = None
+
+        # --- 1. Upload to Cloudinary (accepts compressed base64 or File) ---
         if file:
-            upload_result = cloudinary.uploader.upload(file)
+            upload_result = cloudinary.uploader.upload(
+                file,
+                folder="lost_and_found/uploads",
+                resource_type="auto"
+            )
             photo_url = upload_result.get("secure_url")
 
+        # --- 2. Create main report ---
         report = serializer.save(reported_by=self.request.user)
+
+        # --- 3. Create LostItem OR FoundItem depending on type ---
+        common_fields = {
+            "report": report,
+            "item_name": self.request.data.get("item_name"),
+            "description": self.request.data.get("description"),
+            "category": self.request.data.get("category"),
+            "photo_url": photo_url,
+        }
 
         if report.type == "lost":
             LostItem.objects.create(
-                report=report,
-                item_name=self.request.data.get("item_name"),
-                description=self.request.data.get("description"),
-                category=self.request.data.get("category"),
+                **common_fields,
                 location_last_seen=self.request.data.get("location_last_seen"),
-                photo_url=photo_url,
                 date_lost=self.request.data.get("date_lost"),
             )
         else:
             FoundItem.objects.create(
-                report=report,
-                item_name=self.request.data.get("item_name"),
-                description=self.request.data.get("description"),
-                category=self.request.data.get("category"),
+                **common_fields,
                 location_found=self.request.data.get("location_found"),
-                photo_url=photo_url,
                 date_found=self.request.data.get("date_found"),
             )
+
             
     @action(detail=True, methods=["patch"], permission_classes=[permissions.IsAdminUser])
     def approve(self, request, pk=None):
@@ -154,10 +177,10 @@ def resolve_report_view(request, report_id):
     cursor = None
     
     try:
-        # Get database config from settings
+
         db_config = settings.DATABASES['default']
         
-        # Create a new connection outside Django's connection pool
+
         conn = psycopg2.connect(
             dbname=db_config['NAME'],
             user=db_config['USER'],
@@ -166,7 +189,7 @@ def resolve_report_view(request, report_id):
             port=db_config['PORT']
         )
         
-        # CRITICAL: Set isolation level to AUTOCOMMIT
+
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         
         cursor = conn.cursor()
@@ -191,7 +214,7 @@ def resolve_report_view(request, report_id):
         )
         
     finally:
-        # Clean up resources
+
         if cursor:
             cursor.close()
         if conn:

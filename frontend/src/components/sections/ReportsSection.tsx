@@ -19,6 +19,12 @@ export default function ReportsSection() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
+useEffect(() => {
+  fetchReports(true); 
+}, [filters]);
+
+
+
   // infinite scroll observer
   useEffect(() => {
     if (!bottomRef.current) return;
@@ -41,7 +47,25 @@ export default function ReportsSection() {
     <section className="w-full max-w-7xl mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4 text-foreground">Reports</h2>
 
-      <FiltersBar onFilterChange={setFilters} currentFilters={filters} />
+      <FiltersBar
+        onFilterChange={(newPart) =>
+          setFilters((prev) => {
+            const merged = { ...prev, ...newPart };
+
+            Object.keys(merged).forEach((key) => {
+              if (
+                merged[key as keyof typeof merged] === "" ||
+                merged[key as keyof typeof merged] === "all"
+              ) {
+                delete merged[key as keyof typeof merged];
+              }
+            });
+
+            return merged;
+          })
+        }
+        currentFilters={filters}
+      />
 
       <ReportsGrid reports={reports as Report[]} loading={loading} />
 

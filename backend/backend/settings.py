@@ -210,9 +210,18 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-cloudinary.config( 
-  cloud_name = "YOUR_CLOUD_NAME", 
-  api_key = "YOUR_API_KEY", 
-  api_secret = "YOUR_API_SECRET",
-  secure = True
+cloudinary.config(
+    cloud_name="dra8ehkv8",
+    api_key="445537845816552",
+    api_secret="ZGm7jJ3prES0f1-1vYAUUhc1W8I",
+    secure=True
 )
+
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": "dra8ehkv8",
+    "API_KEY": "445537845816552",
+    "API_SECRET": "ZGm7jJ3prES0f1-1vYAUUhc1W8I",
+}
+
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+

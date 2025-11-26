@@ -98,7 +98,7 @@ export default function CreateReportSection() {
 
       let compressedPhoto = photo;
       if (photo) {
-        compressedPhoto = await compressImage(photo, 480);
+        compressedPhoto = await compressImage(photo, 720);
       }
 
       const payload: CreateReportPayload = {
@@ -138,7 +138,7 @@ export default function CreateReportSection() {
   }
 
   return (
-    <Card className="max-w-3xl mx-auto mt-12 p-6 shadow-lg border border-white/10 dark:bg-[rgba(30,0,0,0.3)] bg-white/90 backdrop-blur-md rounded-2xl">
+    <Card className="max-w-3xl mx-auto mt-12 p-6 shadow-lg border border-white/10 bg-card/80 backdrop-blur-md rounded-2xl">
       <CardHeader>
         <CardTitle className="text-2xl font-semibold text-center bg-linear-to-r from-[#800000] via-[#b22222] to-[#800000] bg-clip-text text-transparent">
           Create Report

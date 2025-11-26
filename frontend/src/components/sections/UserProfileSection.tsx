@@ -73,7 +73,7 @@ export default function UserProfileSection() {
       <Card
         className={cn(
           "w-full max-w-md mx-auto p-6 shadow-xl border-2 border-accent rounded-2xl transition-all duration-500",
-          "bg-linear-to-br from-neutral-100 via-neutral-50 to-neutral-200 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900",
+          "bg-card",
           "backdrop-blur-xl hover:shadow-2xl"
         )}
       >

@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 
 interface FiltersBarProps {
@@ -26,11 +26,12 @@ interface FiltersBarProps {
 }
 
 const categories = [
-  "Electronics",
-  "Clothing",
-  "Documents",
-  "Accessories",
-  "Other",
+  { label: "All", value: "all" },
+  { label: "Electronics", value: "electronics" },
+  { label: "Clothing", value: "clothing" },
+  { label: "Documents", value: "documents" },
+  { label: "Accessories", value: "accessories" },
+  { label: "Other", value: "other" },
 ];
 
 export default function FiltersBar({
@@ -39,15 +40,24 @@ export default function FiltersBar({
 }: FiltersBarProps) {
   const [searchValue, setSearchValue] = useState(currentFilters.search || "");
 
+  // Debounce search input
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      onFilterChange({ ...currentFilters, search: searchValue || undefined });
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [searchValue]);
+
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
       <Tabs
-        defaultValue="lost"
-        onValueChange={(value) => {
-          if (value === "lost" || value === "found") {
-            onFilterChange({ type: value });
-          }
-        }}
+        value={currentFilters.type ?? "lost"}
+        onValueChange={(v) =>
+          onFilterChange({
+            type: v === "all" ? undefined : (v as "lost" | "found"),
+          })
+        }
       >
         <TabsList>
           <TabsTrigger value="lost">Lost Items</TabsTrigger>
@@ -55,25 +65,24 @@ export default function FiltersBar({
         </TabsList>
       </Tabs>
 
-      {/* Search, Category, Sort */}
       <div className="flex flex-wrap gap-3 w-full sm:w-auto sm:justify-end">
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search..."
             value={searchValue}
-            onChange={(e) => {
-              setSearchValue(e.target.value);
-              onFilterChange({ ...currentFilters, search: e.target.value });
-            }}
+            onChange={(e) => setSearchValue(e.target.value)}
             className="pl-8 w-40 sm:w-56"
           />
         </div>
 
         <Select
-          value={currentFilters.category || ""}
+          value={currentFilters.category ?? "all"}
           onValueChange={(v) =>
-            onFilterChange({ ...currentFilters, category: v })
+            onFilterChange({
+              ...currentFilters,
+              category: v === "all" ? undefined : v,
+            })
           }
         >
           <SelectTrigger className="w-[140px]">
@@ -81,8 +90,8 @@ export default function FiltersBar({
           </SelectTrigger>
           <SelectContent>
             {categories.map((cat) => (
-              <SelectItem key={cat} value={cat.toLowerCase()}>
-                {cat}
+              <SelectItem key={cat.value} value={cat.value}>
+                {cat.label}
               </SelectItem>
             ))}
           </SelectContent>

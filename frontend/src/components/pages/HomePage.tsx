@@ -31,7 +31,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-neutral-100 via-white to-neutral-200 dark:from-neutral-900 dark:via-neutral-950 dark:to-black py-12 px-4 md:px-8 lg:px-16 transition-colors duration-500">
+    <div className="min-h-screen bg-background py-12 px-4 md:px-8 lg:px-16 transition-colors duration-500 min-w-[300px]">
       <header className="flex flex-col items-center mb-10 space-y-2">
         <div className="w-full flex justify-end gap-2">
           <Button

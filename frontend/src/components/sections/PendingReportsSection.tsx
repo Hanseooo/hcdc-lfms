@@ -84,7 +84,7 @@ export default function PendingReportsSection() {
 
         {loading &&
           Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="w-full h-[400px] rounded-2xl" />
+            <Skeleton key={i} className="w-full h-[400px] rounded-2xl bg-foreground/25" />
           ))}
       </div>
 

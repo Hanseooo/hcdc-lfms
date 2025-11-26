@@ -29,38 +29,39 @@ export function useReports({
   const [hasMore, setHasMore] = useState(true);
 
   // 🔹 Fetch reports (already works)
-  const fetchReports = useCallback(
-    async (url?: string, reset = false) => {
-      if (loading || !hasMore) return;
+const fetchReports = useCallback(
+  async (reset = false, url?: string) => {
+    if (loading || !hasMore) return;
 
-      setLoading(true);
-      try {
-        const response = await axios.get<PaginatedResponse<Report>>(
-          url || nextUrl!,
-          {
-            params: {
-              type,
-              search,
-              category,
-              ordering,
-              status: "approved",
-            },
-          }
-        );
+    setLoading(true);
+    try {
+      const response = await axios.get<PaginatedResponse<Report>>(
+        url || nextUrl!,
+        {
+          params: {
+            type,
+            search,
+            category,
+            ordering,
+            status: "approved",
+          },
+        }
+      );
 
-        setReports((prev) =>
-          reset ? response.data.results : [...prev, ...response.data.results]
-        );
-        setNextUrl(response.data.next);
-        setHasMore(Boolean(response.data.next));
-      } catch (err) {
-        console.error("Error fetching reports:", err);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [type, search, category, ordering, nextUrl, loading, hasMore]
-  );
+      setReports((prev) =>
+        reset ? response.data.results : [...prev, ...response.data.results]
+      );
+      setNextUrl(response.data.next);
+      setHasMore(Boolean(response.data.next));
+    } catch (err) {
+      console.error("Error fetching reports:", err);
+    } finally {
+      setLoading(false);
+    }
+  },
+  [type, search, category, ordering, nextUrl, loading, hasMore]
+);
+
 
   useEffect(() => {
     setReports([]);

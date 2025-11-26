@@ -10,6 +10,7 @@ import { MessageCircle, CheckCircle, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { CommentModal } from "../modals/CommentModal";
 import { useAuth } from "@/hooks/useAuth";
+import { ImagePreviewDialog } from "../modals/ImagePreviewDialog";
 import type { LostReport } from "@/types/apiResponse";
 import { api } from "@/api/axiosInstance";
 import { toast } from "sonner";
@@ -18,7 +19,9 @@ import { ReportActionModal } from "../modals/ReportActionModal";
 export default function LostItemCard({ report }: { report: LostReport }) {
   const { user } = useAuth();
   const [commentOpen, setCommentOpen] = useState(false);
-  const [reportActionOpen, setReportActionOpen] = useState(false)
+  const [reportActionOpen, setReportActionOpen] = useState(false);
+  const [imageOpen, setImageOpen] = useState(false);
+
   const { lost_item } = report;
   const isOwner = user?.id === report.reported_by.id;
 
@@ -34,9 +37,9 @@ export default function LostItemCard({ report }: { report: LostReport }) {
 
   return (
     <>
-      <Card className="w-full max-w-lg mx-auto my-4 border border-border bg-card shadow-sm">
+      <Card className="w-full max-w-lg mx-auto my-4 border bg-card shadow-sm rounded-xl">
         {/* Header */}
-        <CardHeader className="flex flex-row items-center gap-3">
+        <CardHeader className="flex flex-row items-center gap-3 pb-2">
           <Avatar>
             <AvatarImage src={report.reported_by.profile_avatar_url ?? ""} />
             <AvatarFallback>
@@ -46,10 +49,10 @@ export default function LostItemCard({ report }: { report: LostReport }) {
           </Avatar>
 
           <div className="flex flex-col">
-            <p className="font-medium">
+            <p className="font-semibold text-base">
               {report.reported_by.first_name} {report.reported_by.last_name}
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {new Date(report.date_time).toLocaleString()}
             </p>
           </div>
@@ -58,7 +61,7 @@ export default function LostItemCard({ report }: { report: LostReport }) {
             <Button
               variant="ghost"
               size="icon"
-              className="ml-auto"
+              className="ml-auto hover:bg-red-50"
               onClick={handleDeleteReport}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
@@ -67,37 +70,44 @@ export default function LostItemCard({ report }: { report: LostReport }) {
         </CardHeader>
 
         {/* Content */}
-        <CardContent>
+        <CardContent className="space-y-3">
           {lost_item.photo_url && (
             <img
               src={lost_item.photo_url}
               alt={lost_item.item_name}
-              className="w-full rounded-lg object-cover h-64"
+              className="w-full rounded-lg object-cover h-64 cursor-pointer transition hover:opacity-90"
+              onClick={() => setImageOpen(true)}
             />
           )}
 
-          <h3 className="text-lg font-semibold mt-3">{lost_item.item_name}</h3>
-          <p className="text-sm text-muted-foreground">
+          <h3 className="text-xl font-bold tracking-tight">
+            {lost_item.item_name}
+          </h3>
+
+          <p className="text-sm text-muted-foreground leading-relaxed">
             {lost_item.description}
           </p>
 
-          <div className="text-sm mt-3 space-y-1">
+          <div className="text-sm space-y-1 pt-1">
             <p>
-              <strong>Category:</strong> {lost_item.category}
+              <span className="font-semibold">Category:</span>{" "}
+              {lost_item.category}
             </p>
             <p>
-              <strong>Last seen at:</strong> {lost_item.location_last_seen}
+              <span className="font-semibold">Last seen at:</span>{" "}
+              {lost_item.location_last_seen}
             </p>
             {lost_item.date_lost && (
               <p>
-                <strong>Date Lost:</strong> {lost_item.date_lost}
+                <span className="font-semibold">Date Lost:</span>{" "}
+                {lost_item.date_lost}
               </p>
             )}
           </div>
         </CardContent>
 
         {/* Footer */}
-        <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-2">
+        <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-2">
           <Button
             variant="outline"
             size="sm"
@@ -108,12 +118,24 @@ export default function LostItemCard({ report }: { report: LostReport }) {
           </Button>
 
           {!isOwner && (
-            <Button onClick={() => setReportActionOpen(true)} variant="default" size="sm" className="w-full sm:w-auto hover:cursor-pointer">
+            <Button
+              onClick={() => setReportActionOpen(true)}
+              size="sm"
+              className="w-full sm:w-auto"
+            >
               <CheckCircle className="mr-2 h-4 w-4" /> Item Found
             </Button>
           )}
         </CardFooter>
       </Card>
+
+      {/* Dialogs */}
+      <ImagePreviewDialog
+        open={imageOpen}
+        onClose={() => setImageOpen(false)}
+        src={lost_item.photo_url ?? ""}
+        alt={lost_item.item_name}
+      />
 
       <CommentModal
         open={commentOpen}
