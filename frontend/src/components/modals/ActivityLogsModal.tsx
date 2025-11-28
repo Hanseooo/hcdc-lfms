@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,9 +12,10 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, UserRound, CalendarDays, ClipboardList } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { api } from "@/api/axiosInstance";
 import { toast } from "sonner";
-import type { ActivityLogResponse, ActivityLog } from "@/types/apiResponse";
+import type { ActivityLog, ActivityLogResponse } from "@/types/apiResponse";
 
 interface ActivityLogsModalProps {
   open: boolean;
@@ -29,27 +30,31 @@ export function ActivityLogsModal({ open, onClose }: ActivityLogsModalProps) {
   );
   const [hasMore, setHasMore] = useState(true);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-
   const fetchLogs = useCallback(async () => {
-    if (!nextPage || loading || !hasMore) return;
+    if (!nextPage || loading) return;
 
     try {
       setLoading(true);
-      const res = await api.get<ActivityLogResponse>(nextPage);
+
+      // Strip full domain if DRF gives absolute URL
+      const url = nextPage.startsWith("http")
+        ? nextPage.replace("http://127.0.0.1:8000/api", "")
+        : nextPage;
+
+      const res = await api.get<ActivityLogResponse>(url);
       const data = res.data;
 
       setLogs((prev) => [...prev, ...data.results]);
-      setNextPage(data.next);
+      setNextPage(data.next || null);
       setHasMore(!!data.next);
-    } catch (err) {
+    } catch {
       toast.error("Failed to fetch activity logs");
     } finally {
       setLoading(false);
     }
-  }, [nextPage, loading, hasMore]);
+  }, [nextPage, loading]);
 
-  // Reset & fetch first page when modal opens
+  // Reset logs when modal opens
   useEffect(() => {
     if (open) {
       setLogs([]);
@@ -58,22 +63,10 @@ export function ActivityLogsModal({ open, onClose }: ActivityLogsModalProps) {
     }
   }, [open]);
 
-  // Initial fetch when modal opens
+  // Fetch first page
   useEffect(() => {
-    if (open && nextPage === `/reports/activity-logs/`) {
-      fetchLogs();
-    }
-  }, [open, fetchLogs, nextPage]);
-
-  const handleScroll = () => {
-    const container = scrollRef.current;
-    if (!container || loading || !hasMore) return;
-
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    if (scrollTop + clientHeight >= scrollHeight - 100) {
-      fetchLogs();
-    }
-  };
+    if (open && logs.length === 0) fetchLogs();
+  }, [open, fetchLogs, logs.length]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -84,12 +77,12 @@ export function ActivityLogsModal({ open, onClose }: ActivityLogsModalProps) {
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea
-          className="flex-1 min-h-0 pr-2"
-          ref={scrollRef}
-          onScroll={handleScroll}
-        >
-          {logs.length === 0 && !loading ? (
+        <ScrollArea className="flex-1 min-h-0 pr-2">
+          {logs.length === 0 && loading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : logs.length === 0 ? (
             <p className="text-center text-muted-foreground py-6">
               No activity logs found.
             </p>
@@ -154,12 +147,25 @@ export function ActivityLogsModal({ open, onClose }: ActivityLogsModalProps) {
                   </Card>
                 );
               })}
-              {loading && (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              )}
             </ul>
+          )}
+
+          {/* Load More Button */}
+          {hasMore && !loading && logs.length > 0 && (
+            <div className="flex justify-center mt-4">
+              <Button
+                onClick={fetchLogs}
+                className="bg-primary text-white hover:bg-primary/80 transition-colors flex items-center gap-2"
+              >
+                Load More
+              </Button>
+            </div>
+          )}
+
+          {loading && logs.length > 0 && (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
           )}
         </ScrollArea>
       </DialogContent>
