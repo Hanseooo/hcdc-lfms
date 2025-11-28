@@ -69,15 +69,18 @@ export default function LostItemCard({ report }: { report: LostReport }) {
           )}
         </CardHeader>
 
-        {/* Content */}
         <CardContent className="space-y-3">
-          {lost_item.photo_url && (
+          {lost_item.photo_url ? (
             <img
               src={lost_item.photo_url}
               alt={lost_item.item_name}
               className="w-full rounded-lg object-cover h-64 cursor-pointer transition hover:opacity-90"
               onClick={() => setImageOpen(true)}
             />
+          ) : (
+            <div className="w-full h-64 flex items-center justify-center rounded-lg border border-dashed border-muted-foreground bg-muted text-muted-foreground text-sm font-medium">
+              No image available
+            </div>
           )}
 
           <h3 className="text-xl font-bold tracking-tight">

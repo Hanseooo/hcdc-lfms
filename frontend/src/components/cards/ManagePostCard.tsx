@@ -63,15 +63,19 @@ export default function ManagePostCard({
 
   return (
     <Card className="w-full max-w-xl bg-card shadow-lg hover:shadow-xl transition-all rounded-2xl overflow-hidden flex flex-col">
-      {item?.photo_url && (
-        <div className="relative w-full aspect-video sm:aspect-4/3">
+      <div className="relative w-full aspect-video sm:aspect-4/3">
+        {item?.photo_url ? (
           <img
             src={item.photo_url}
             alt={item.item_name}
             className="absolute inset-0 w-full h-full object-cover"
           />
-        </div>
-      )}
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg border border-dashed border-muted-foreground bg-muted text-muted-foreground text-sm font-medium">
+            No image available
+          </div>
+        )}
+      </div>
 
       <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4">
         <div className="flex flex-col gap-1">

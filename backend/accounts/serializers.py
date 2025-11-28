@@ -20,6 +20,16 @@ class UserSerializer(serializers.ModelSerializer):
             "contact_number",
             "profile_avatar_url",
         ]
+    def update(self, instance, validated_data):
+        request = self.context.get("request")
+        user = request.user
+
+        if "user_type" in validated_data and user.user_type != "admin":
+            raise serializers.ValidationError({
+                "user_type": "You do not have permission to update the user role."
+            })
+
+        return super().update(instance, validated_data)
 
 
 

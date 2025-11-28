@@ -1,4 +1,7 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
 
 export function ImagePreviewDialog({
   open,
@@ -13,11 +16,11 @@ export function ImagePreviewDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl p-0 overflow-hidden">
+      <DialogContent className="p-0 bg-background dark:bg-neutral-900 rounded-lg max-w-full w-[90vw] max-h-[90vh] flex items-center justify-center">
         <img
           src={src}
           alt={alt}
-          className="w-full h-full object-contain rounded-lg"
+          className="max-w-full max-h-[90vh] object-contain rounded-lg"
         />
       </DialogContent>
     </Dialog>

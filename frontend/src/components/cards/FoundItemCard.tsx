@@ -39,7 +39,6 @@ export default function FoundItemCard({ report }: { report: FoundReport }) {
   return (
     <>
       <Card className="w-full max-w-4xl mx-auto my-4 border bg-card shadow-sm rounded-xl">
-        {/* Header */}
         <CardHeader className="flex flex-row items-center gap-3 pb-2">
           <Avatar>
             <AvatarImage src={report.reported_by.profile_avatar_url ?? ""} />
@@ -70,15 +69,18 @@ export default function FoundItemCard({ report }: { report: FoundReport }) {
           )}
         </CardHeader>
 
-        {/* Content */}
         <CardContent className="space-y-3">
-          {found_item.photo_url && (
+          {found_item.photo_url ? (
             <img
               src={found_item.photo_url}
               alt={found_item.item_name}
               className="w-full rounded-lg object-cover h-64 cursor-pointer transition hover:opacity-90"
               onClick={() => setImageOpen(true)}
             />
+          ) : (
+            <div className="w-full h-64 flex items-center justify-center rounded-lg border border-dashed border-muted-foreground bg-muted text-muted-foreground text-sm font-medium">
+              No image available
+            </div>
           )}
 
           <h3 className="text-xl font-bold tracking-tight">
@@ -108,7 +110,6 @@ export default function FoundItemCard({ report }: { report: FoundReport }) {
           </div>
         </CardContent>
 
-        {/* Footer */}
         <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-2">
           <Button
             variant="outline"
@@ -131,7 +132,6 @@ export default function FoundItemCard({ report }: { report: FoundReport }) {
         </CardFooter>
       </Card>
 
-      {/* Dialogs */}
       <ImagePreviewDialog
         open={imageOpen}
         onClose={() => setImageOpen(false)}
