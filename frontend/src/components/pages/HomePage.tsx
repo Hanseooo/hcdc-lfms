@@ -5,17 +5,21 @@ import CreateReportSection from "../sections/CreateReportSection";
 import UserProfileSection from "../sections/UserProfileSection";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Bell, ClipboardList } from "lucide-react";
+import { Bell, ClipboardList, FolderKanban } from "lucide-react";
 import { NotificationModal } from "@/components/modals/NotificationModal";
 import { LogsModal } from "@/components/modals/LogsModal";
 import { api } from "@/api/axiosInstance";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { ActivityLogsModal } from "../modals/ActivityLogsModal";
 
 export default function HomePage() {
   const [openNotifications, setOpenNotifications] = useState(false);
   const [openLogs, setOpenLogs] = useState(false);
+  const [openActivityLog, setOpenActivityLog] = useState(false);
   const [isNotifOpened, setIsNotifOpened] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchUnreadCount = async () => {
@@ -34,6 +38,17 @@ export default function HomePage() {
     <div className="min-h-screen bg-background py-12 px-4 md:px-8 lg:px-16 transition-colors duration-500 min-w-[300px]">
       <header className="flex flex-col items-center mb-10 space-y-2">
         <div className="w-full flex justify-end gap-2">
+          { user?.user_type === 'admin' &&
+            <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setOpenActivityLog(true)}
+            className="relative"
+          >
+            <FolderKanban className="h-5 w-5" />
+          </Button>
+          }
+
           <Button
             variant="ghost"
             size="icon"
@@ -48,7 +63,7 @@ export default function HomePage() {
             size="icon"
             onClick={() => {
               setOpenNotifications(true);
-              setIsNotifOpened(true)
+              setIsNotifOpened(true);
             }}
             className="relative"
           >
@@ -95,6 +110,7 @@ export default function HomePage() {
         onClose={() => setOpenNotifications(false)}
       />
       <LogsModal open={openLogs} onClose={() => setOpenLogs(false)} />
+      <ActivityLogsModal open={openActivityLog} onClose={() => setOpenActivityLog(false)} />
     </div>
   );
 }

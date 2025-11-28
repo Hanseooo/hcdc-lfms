@@ -37,7 +37,6 @@ export default function PendingReportsSection() {
   }, [bottomRef, hasMore, loading, fetchReports]);
 
   const handleStatusChange = (id: number) => {
-    // ✅ remove from current state immediately
     setReports((prev) => prev.filter((r) => r.id !== id));
   };
 

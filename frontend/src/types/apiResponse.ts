@@ -117,14 +117,11 @@ export interface ReportResolutionLog {
 
 export interface ActivityLog {
   id: number;
-  notification: Notification;
   user: UserMini;
+  role?: string | null;
   report?: Report | null;
-  report_type?: string | null;
   action: string;
-  user_full_name: string;
-  item_name?: string | null;
-  created_at: string; 
+  created_at: string;
 }
 
 export interface UserMini {

@@ -134,20 +134,15 @@ class ReportResolutionLogSerializer(serializers.ModelSerializer):
 
 class ActivityLogSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
-    notification = NotificationSerializer(read_only=True)
     report = ReportSerializer(read_only=True)
 
     class Meta:
         model = ActivityLog
         fields = [
             "id",
-            "notification",
             "user",
+            "role",
             "report",
-            "report_type",
             "action",
-            "user_full_name",
-            "item_name",
             "created_at",
         ]
-

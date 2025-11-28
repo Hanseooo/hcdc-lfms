@@ -96,35 +96,35 @@ $$ LANGUAGE plpgsql;
 
 --TRIGGER!!!
 
---STEP 1
 
--- Drop and recreate the function safely
-CREATE OR REPLACE FUNCTION log_claim_activity()
+DROP TRIGGER IF EXISTS trg_log_claim_activity ON reports_notification;
+DROP FUNCTION IF EXISTS log_claim_activity();
+
+-- Create new trigger function for report resolution
+CREATE OR REPLACE FUNCTION log_report_resolution()
 RETURNS TRIGGER AS $$
 DECLARE
-    v_user_full_name TEXT;
+    v_user_role TEXT;
 BEGIN
-    -- Get full name from your user table
-    SELECT CONCAT(first_name, ' ', last_name)
-    INTO v_user_full_name
+    -- Get the user's role from accounts_user
+    SELECT user_type
+    INTO v_user_role
     FROM accounts_user
-    WHERE id = NEW.user_id;
+    WHERE id = NEW.resolved_by_id;
 
-    -- Insert into activity log (map columns correctly)
+    -- Insert into activity log
     INSERT INTO activity_logs (
-        notification_id,
         user_id,
+        role,
         report_id,
         action,
-        user_full_name,
         created_at
     )
     VALUES (
-        NEW.id,
-        NEW.user_id,
-        NEW.related_report_id,
-        'notification_created',  
-        v_user_full_name,
+        NEW.resolved_by_id,
+        v_user_role,
+        NEW.report_id,
+        CONCAT(NEW.giver_name, ' gave ', NEW.report_title, ' to ', NEW.receiver_name),
         NOW()
     );
 
@@ -132,15 +132,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
-
---STEP 2
-
-DROP TRIGGER IF EXISTS trg_log_claim_activity ON reports_notification;
-
-CREATE TRIGGER trg_log_claim_activity
-AFTER INSERT ON reports_notification
+-- Create trigger on the resolution log table
+CREATE TRIGGER trg_log_report_resolution
+AFTER INSERT ON reports_reportresolutionlog
 FOR EACH ROW
-EXECUTE FUNCTION log_claim_activity();
-
-
+EXECUTE FUNCTION log_report_resolution();

@@ -10,6 +10,7 @@ interface UseReportsOptions {
   search?: string;
   category?: string;
   ordering?: "date_time" | "-date_time";
+  status?: "pending" | "resolved" | "rejected";
 }
 
 export function useManageReports({
@@ -17,10 +18,11 @@ export function useManageReports({
   search,
   category,
   ordering,
+  status = "pending",
 }: UseReportsOptions) {
   const [reports, setReports] = useState<Report[]>([]);
   const [nextUrl, setNextUrl] = useState<string | null>(
-  `${BASE_URL}/reports/reports/`
+    `${BASE_URL}/reports/reports/`
   );
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -39,7 +41,7 @@ export function useManageReports({
               search,
               category,
               ordering,
-              status: "pending",
+              status,
             },
           }
         );
@@ -50,20 +52,21 @@ export function useManageReports({
         setNextUrl(response.data.next);
         setHasMore(Boolean(response.data.next));
       } catch (err) {
-        console.error("Error fetching pending reports:", err);
+        console.error("Error fetching reports:", err);
         setHasMore(false);
       } finally {
         setLoading(false);
       }
     },
-    [type, search, category, ordering, nextUrl, loading, hasMore]
+    [type, search, category, ordering, status, nextUrl, loading, hasMore]
   );
 
+  // Reset list when filters change
   useEffect(() => {
     setReports([]);
-    setNextUrl(`${BASE_URL}/reports/reports/?status=pending`);
+    setNextUrl(`${BASE_URL}/reports/reports/?status=${status}`);
     setHasMore(true);
-  }, [type, search, category, ordering]);
+  }, [type, search, category, ordering, status]);
 
   return { reports, loading, fetchReports, hasMore, setReports };
 }

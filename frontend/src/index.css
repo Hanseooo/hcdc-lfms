@@ -127,7 +127,16 @@
     @apply border-border outline-ring/50;
     font-family: "Roboto", sans-serif;
     font-optical-sizing: auto;
+
+    scrollbar-width: none; 
+    -ms-overflow-style: none;
   }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
+
+  
   body {
     @apply bg-background text-foreground;
   }
