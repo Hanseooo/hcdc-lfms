@@ -11,6 +11,7 @@ import LandingPage from "./components/pages/LandingPage";
 import ProtectedRoute from "./components/routing/ProtectedRoute";
 import { useAuth } from "./hooks/useAuth";
 import AdminPage from "./components/pages/AdminPage";
+import { Toaster } from "./components/ui/sonner";
 
 export default function App() {
   const { user, authLoading } = useAuth();
@@ -30,6 +31,8 @@ export default function App() {
         {/* Show navbar only for logged-in users */}
         {user && <Navbar />}
 
+        <Toaster richColors position="top-right" />
+
         <Routes>
           <Route
             path="/"
@@ -39,15 +42,15 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/home" element={<HomePage />} />
             <Route path="/explore" element={<ExplorePage />} />
-            {
-              user?.user_type === 'admin' && <Route path="/admin" element={<AdminPage />} />
-            }
+            {user?.user_type === "admin" && (
+              <Route path="/admin" element={<AdminPage />} />
+            )}
           </Route>
 
-          {/* <Route
+          <Route
             path="*"
             element={<Navigate to={user ? "/home" : "/"} replace />}
-          /> */}
+          />
         </Routes>
       </div>
     </Router>

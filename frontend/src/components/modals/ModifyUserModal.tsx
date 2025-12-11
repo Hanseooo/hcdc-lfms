@@ -98,7 +98,7 @@ export function ModifyUserModal({ open, onClose }: ModifyUserModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl h-[85vh] flex flex-col dark:bg-neutral-950 bg-background">
+      <DialogContent className="max-w-3xl h-[90vh] pb-12 flex flex-col dark:bg-neutral-950 bg-background">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-center">
             Modify User Role

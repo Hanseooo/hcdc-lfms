@@ -10,6 +10,7 @@ const BASE_URL =
 
 interface UseReportsOptions {
   type?: "lost" | "found";
+  status?: "pending" | "approved" | "rejected" | "resolved"; 
   search?: string;
   category?: string;
   ordering?: "date_time" | "-date_time";
@@ -17,6 +18,7 @@ interface UseReportsOptions {
 
 export function useReports({
   type,
+  status,
   search,
   category,
   ordering,
@@ -29,81 +31,83 @@ export function useReports({
   const [hasMore, setHasMore] = useState(true);
 
   // 🔹 Fetch reports (already works)
-const fetchReports = useCallback(
-  async (reset = false, url?: string) => {
-    if (loading || !hasMore) return;
+  const fetchReports = useCallback(
+    async (reset = false, url?: string) => {
+      if (loading || !hasMore) return;
 
-    setLoading(true);
-    try {
-      const response = await axios.get<PaginatedResponse<Report>>(
-        url || nextUrl!,
-        {
-          params: {
-            type,
-            search,
-            category,
-            ordering,
-            status: "approved",
-          },
-        }
-      );
+      setLoading(true);
+      try {
+        const response = await axios.get<PaginatedResponse<Report>>(
+          url || nextUrl!,
+          {
+            params: {
+              type,
+              search,
+              category,
+              ordering,
+              status,
+            },
+          }
+        );
 
-      setReports((prev) =>
-        reset ? response.data.results : [...prev, ...response.data.results]
-      );
-      setNextUrl(response.data.next);
-      setHasMore(Boolean(response.data.next));
-    } catch (err) {
-      console.error("Error fetching reports:", err);
-    } finally {
-      setLoading(false);
-    }
-  },
-  [type, search, category, ordering, nextUrl, loading, hasMore]
-);
-
+        setReports((prev) =>
+          reset ? response.data.results : [...prev, ...response.data.results]
+        );
+        setNextUrl(response.data.next);
+        setHasMore(Boolean(response.data.next));
+      } catch (err) {
+        console.error("Error fetching reports:", err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [type, status, search, category, ordering, nextUrl, loading, hasMore]
+  );
 
   useEffect(() => {
     setReports([]);
-    setNextUrl(`${BASE_URL}/reports/reports/?status=approved`);
+    setNextUrl(`${BASE_URL}/reports/reports/?status=${status || "approved"}`);
     setHasMore(true);
   }, [type, search, category, ordering]);
 
   async function uploadPost(payload: CreateReportPayload) {
     try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("User not authenticated");
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("User not authenticated");
 
-        const formData = new FormData();
+      const formData = new FormData();
 
-        // 🔹 Compress and append image if provided
-        if (payload.photo instanceof File) {
-        const compressedPhoto = await compressImage(payload.photo, 480); // 480p max height or width
+      // 🔹 Compress and append image if provided
+      if (payload.photo instanceof File) {
+        const compressedPhoto = await compressImage(payload.photo, 720); 
         formData.append("photo", compressedPhoto);
-        }
+      }
 
-        // 🔹 Append other fields
-        Object.entries(payload).forEach(([key, value]) => {
+      // 🔹 Append other fields
+      Object.entries(payload).forEach(([key, value]) => {
         if (key !== "photo" && value !== undefined && value !== null) {
-            formData.append(key, String(value));
+          formData.append(key, String(value));
         }
-        });
+      });
 
-        // 🔹 Send request
-        const response = await axios.post(`${BASE_URL}/reports/reports/`, formData, {
-        headers: {
+      // 🔹 Send request
+      const response = await axios.post(
+        `${BASE_URL}/reports/reports/`,
+        formData,
+        {
+          headers: {
             Authorization: `Token ${token}`,
             "Content-Type": "multipart/form-data",
-        },
-        });
+          },
+        }
+      );
 
-        return response.data;
+      return response.data;
     } catch (err: any) {
-        console.error("Upload failed:", err.response?.data || err);
-        throw err;
+      console.error("Upload failed:", err.response?.data || err);
+      throw err;
     }
-    }
-
+  }
 
   return { reports, loading, fetchReports, uploadPost, hasMore };
 }

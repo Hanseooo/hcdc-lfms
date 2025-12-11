@@ -24,17 +24,16 @@ from reports.models import ActivityLog
 
 
 class ReportViewSet(viewsets.ModelViewSet):
-    queryset = Report.objects.all().order_by("-date_time")  # Keep this for the router
+    queryset = Report.objects.all().order_by("-date_time")
     serializer_class = ReportSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrOwnerOrReadOnly ]
-    
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrOwnerOrReadOnly]
+
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["type", "status"]
-    
+
     def get_queryset(self):
         queryset = Report.objects.all().order_by("-date_time")
-        
-        # Get filters from query params
+
         report_type = self.request.query_params.get("type")
         category = self.request.query_params.get("category")
         search = self.request.query_params.get("search")
@@ -42,30 +41,35 @@ class ReportViewSet(viewsets.ModelViewSet):
         if report_type:
             queryset = queryset.filter(type=report_type)
 
-        # Filter category inside the nested lost_item / found_item
         if category:
             if report_type == "lost":
                 queryset = queryset.filter(lost_item__category=category)
             elif report_type == "found":
                 queryset = queryset.filter(found_item__category=category)
+            else:
+                # if type not specified, filter either nested relation matching category
+                queryset = queryset.filter(
+                    Q(lost_item__category=category) | Q(found_item__category=category)
+                )
 
-        # Search across item_name and description
         if search:
             queryset = queryset.filter(
                 Q(lost_item__item_name__icontains=search) |
                 Q(found_item__item_name__icontains=search) |
                 Q(lost_item__description__icontains=search) |
                 Q(found_item__description__icontains=search)
-            )
+            ).distinct()
 
         return queryset
 
-
     def perform_create(self, serializer):
+        """
+        Handles uploading optional photo, creating the Report,
+        and the related LostItem/FoundItem based on report.type.
+        """
         file = self.request.data.get("photo")
         photo_url = None
 
-        # --- 1. Upload to Cloudinary (accepts compressed base64 or File) ---
         if file:
             upload_result = cloudinary.uploader.upload(
                 file,
@@ -74,10 +78,8 @@ class ReportViewSet(viewsets.ModelViewSet):
             )
             photo_url = upload_result.get("secure_url")
 
-        # --- 2. Create main report ---
         report = serializer.save(reported_by=self.request.user)
 
-        # --- 3. Create LostItem OR FoundItem depending on type ---
         common_fields = {
             "report": report,
             "item_name": self.request.data.get("item_name"),
@@ -99,32 +101,61 @@ class ReportViewSet(viewsets.ModelViewSet):
                 date_found=self.request.data.get("date_found"),
             )
 
-            
     @action(detail=True, methods=["patch"], permission_classes=[permissions.IsAdminUser])
     def approve(self, request, pk=None):
         report = self.get_object()
         report.status = "approved"
         report.save(update_fields=["status"])
-        return Response({"status": "approved"}, status=status.HTTP_200_OK)
+
+        # Build activity log message
+        admin_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+        owner = report.reported_by
+        owner_name = f"{owner.first_name} {owner.last_name}".strip() or owner.username
+
+        # Get item name safely
+        item_name = None
+        if report.type == "lost" and hasattr(report, "lost_item"):
+            item_name = report.lost_item.item_name
+        elif report.type == "found" and hasattr(report, "found_item"):
+            item_name = report.found_item.item_name
+
+        action_text = f"{admin_name} (admin) approved {report.type} report for {owner_name}'s item \"{item_name or '—'}\""
+
         ActivityLog.objects.create(
-                    user=request.user,
-                    role=request.user.user_type,
-                    report=report,
-                    action=f"{request.user.username} (admin) approved report ID {report.id}"
-                )
+            user=request.user,
+            role=getattr(request.user, "user_type", None),
+            report=report,
+            action=action_text
+        )
+
+        return Response({"status": "approved"}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["patch"], permission_classes=[permissions.IsAdminUser])
     def reject(self, request, pk=None):
         report = self.get_object()
         report.status = "rejected"
         report.save(update_fields=["status"])
-        return Response({"status": "rejected"}, status=status.HTTP_200_OK)
+
+        admin_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+        owner = report.reported_by
+        owner_name = f"{owner.first_name} {owner.last_name}".strip() or owner.username
+
+        item_name = None
+        if report.type == "lost" and hasattr(report, "lost_item"):
+            item_name = report.lost_item.item_name
+        elif report.type == "found" and hasattr(report, "found_item"):
+            item_name = report.found_item.item_name
+
+        action_text = f"{admin_name} (admin) rejected {report.type} report for {owner_name}'s item \"{item_name or '—'}\""
+
         ActivityLog.objects.create(
-                user=request.user,
-                role=request.user.user_type,
-                report=report,
-                action=f"{request.user.username} (admin) rejected report ID {report.id}"
-            )
+            user=request.user,
+            role=getattr(request.user, "user_type", None),
+            report=report,
+            action=action_text
+        )
+
+        return Response({"status": "rejected"}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def claim_item(self, request, pk=None):
@@ -132,7 +163,7 @@ class ReportViewSet(viewsets.ModelViewSet):
         message = request.data.get("message", "")
 
         if report.type != "found":
-            return Response({"error": "Only found reports can be claimed."}, status=400)
+            return Response({"error": "Only found reports can be claimed."}, status=status.HTTP_400_BAD_REQUEST)
 
         claim = Claim.objects.create(
             report=report,
@@ -148,6 +179,22 @@ class ReportViewSet(viewsets.ModelViewSet):
             related_report=report
         )
 
+        # Activity log: "<claimer> wants to claim <owner>'s item "<item_name>" on report #id"
+        claimer_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+        owner = report.reported_by
+        owner_name = f"{owner.first_name} {owner.last_name}".strip() or owner.username
+
+        item_name = None
+        if hasattr(report, "found_item"):
+            item_name = report.found_item.item_name
+
+        ActivityLog.objects.create(
+            user=request.user,
+            role=getattr(request.user, "user_type", None),
+            report=report,
+            action=f"{claimer_name} wants to claim {owner_name}'s item \"{item_name or '—'}\" (report #{report.id})"
+        )
+
         return Response(
             {"status": "claim created", "claim_id": claim.id},
             status=status.HTTP_201_CREATED
@@ -159,7 +206,7 @@ class ReportViewSet(viewsets.ModelViewSet):
         message = request.data.get("message", "")
 
         if report.type != "lost":
-            return Response({"error": "Only lost reports can be marked found."}, status=400)
+            return Response({"error": "Only lost reports can be marked found."}, status=status.HTTP_400_BAD_REQUEST)
 
         Notification.objects.create(
             user=report.reported_by,
@@ -169,7 +216,23 @@ class ReportViewSet(viewsets.ModelViewSet):
             related_report=report
         )
 
-        return Response({"status": "item found notification sent"})
+        # Activity log: "<finder> has found <owner>'s item "<item_name>" on report #id"
+        finder_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+        owner = report.reported_by
+        owner_name = f"{owner.first_name} {owner.last_name}".strip() or owner.username
+
+        item_name = None
+        if hasattr(report, "lost_item"):
+            item_name = report.lost_item.item_name
+
+        ActivityLog.objects.create(
+            user=request.user,
+            role=getattr(request.user, "user_type", None),
+            report=report,
+            action=f"{finder_name} has found {owner_name}'s item \"{item_name or '—'}\" (report #{report.id})"
+        )
+
+        return Response({"status": "item found notification sent"}, status=status.HTTP_200_OK)
     
 
 
@@ -310,19 +373,22 @@ class ReportResolutionLogViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_staff:
+        if user.is_staff or getattr(user, "user_type", "") == "admin":
             return self.queryset
         return self.queryset.filter(report__reported_by=user)
 
 
 class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = ActivityLog.objects.select_related("user", "report",).order_by("-created_at")
+    queryset = ActivityLog.objects.select_related("user", "report").order_by("-created_at")
     serializer_class = ActivityLogSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_staff:
-            return self.queryset
-        return self.queryset.filter(user=user)
 
+        if user.is_staff or getattr(user, "user_type", "") == "admin":
+            return self.queryset
+
+        return self.queryset.filter(
+            Q(report__reported_by=user) | Q(user=user)
+        )

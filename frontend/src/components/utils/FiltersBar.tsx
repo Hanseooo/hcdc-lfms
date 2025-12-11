@@ -13,17 +13,20 @@ import { Search } from "lucide-react";
 interface FiltersBarProps {
   onFilterChange: (filters: {
     type?: "lost" | "found";
+    status?: "pending" | "approved" | "rejected" | "resolved";
     search?: string;
     category?: string;
     ordering?: "date_time" | "-date_time";
   }) => void;
   currentFilters: {
     type?: "lost" | "found";
+    status?: "pending" | "approved" | "rejected" | "resolved";
     search?: string;
     category?: string;
     ordering?: "date_time" | "-date_time";
   };
 }
+
 
 const categories = [
   { label: "All", value: "all" },
@@ -52,16 +55,27 @@ export default function FiltersBar({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
       <Tabs
-        value={currentFilters.type ?? "lost"}
-        onValueChange={(v) =>
-          onFilterChange({
-            type: v === "all" ? undefined : (v as "lost" | "found"),
-          })
-        }
+        value={currentFilters.type ?? currentFilters.status ?? "lost"}
+        onValueChange={(v) => {
+          if (v === "resolved") {
+            onFilterChange({
+              ...currentFilters,
+              type: undefined,
+              status: "resolved",
+            });
+          } else {
+            onFilterChange({
+              ...currentFilters,
+              status: undefined,
+              type: v as "lost" | "found",
+            });
+          }
+        }}
       >
         <TabsList>
           <TabsTrigger value="lost">Lost Items</TabsTrigger>
           <TabsTrigger value="found">Found Items</TabsTrigger>
+          <TabsTrigger value="resolved">Resolved Items</TabsTrigger>
         </TabsList>
       </Tabs>
 

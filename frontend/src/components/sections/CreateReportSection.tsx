@@ -116,7 +116,7 @@ export default function CreateReportSection() {
           : undefined,
       };
 
-      await uploadPost({ ...payload, photo: compressedPhoto as any }); // ✅ pass File to hook
+      await uploadPost({ ...payload, photo: compressedPhoto as any });
       toast.success("Report submitted successfully for review!");
 
       // reset form

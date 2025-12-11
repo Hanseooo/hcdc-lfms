@@ -3,6 +3,7 @@ import { type Report } from "@/types/apiResponse";
 import { Skeleton } from "@/components/ui/skeleton";
 import FoundItemCard from "../cards/FoundItemCard";
 import LostItemCard from "../cards/LostItemCard";
+import { OtherReportsCard } from "../cards/OtherReportsCard";
 
 interface ReportsGridProps {
   reports: Report[];
@@ -30,13 +31,17 @@ export default function ReportsGrid({ reports, loading }: ReportsGridProps) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {reports.map((report) =>
-        report.type === "lost" ? (
+      {reports.map((report) => {
+        if (report.status === "resolved") {
+          return <OtherReportsCard key={report.id} report={report} />;
+        }
+
+        return report.type === "lost" ? (
           <LostItemCard key={report.id} report={report} />
         ) : (
           <FoundItemCard key={report.id} report={report} />
-        )
-      )}
+        );
+      })}
     </div>
   );
 }

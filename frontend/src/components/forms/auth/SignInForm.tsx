@@ -29,7 +29,7 @@ export default function SignInForm() {
           ? { email: credential, password }
           : { username: credential, password }
       );
-      toast.success("✅ Signed in successfully!");
+      toast.success("Signed in successfully!");
       navigate("/home");
     } catch (err: any) {
       console.error("Login failed:", err);
@@ -47,7 +47,7 @@ export default function SignInForm() {
       }
 
       setError(message);
-      toast.error(`❌ ${message}`);
+      toast.error(`${message}`);
     } finally {
       setLoading(false);
     }
@@ -64,12 +64,12 @@ export default function SignInForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label className="pb-2" htmlFor="credential">
-              Username or Email
+              Username
             </Label>
             <Input
               id="credential"
               type="text"
-              placeholder="you@hcdc.edu.ph"
+              placeholder="username"
               value={credential}
               onChange={(e) => setCredential(e.target.value)}
               disabled={loading}

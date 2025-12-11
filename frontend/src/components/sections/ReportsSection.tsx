@@ -7,6 +7,7 @@ import { type Report } from "@/types/apiResponse";
 export default function ReportsSection() {
   const [filters, setFilters] = useState<{
     type?: "lost" | "found";
+    status?: "pending" | "approved" | "rejected" | "resolved";
     search?: string;
     category?: string;
     ordering?: "date_time" | "-date_time";
@@ -14,6 +15,7 @@ export default function ReportsSection() {
     type: "lost",
     ordering: "-date_time",
   });
+
 
   const { reports, loading, fetchReports, hasMore } = useReports(filters);
   const observerRef = useRef<IntersectionObserver | null>(null);
