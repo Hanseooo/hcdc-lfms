@@ -119,6 +119,8 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS =[
     "http://localhost:5173",
+    "hcdc-lfms-production.up.railway.app",
+
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -132,18 +134,17 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }
     'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'hcdc_lfms_db',  # The name you gave your database in pgAdmin
-            'USER': 'postgres',      # The user with access to the database
-            'PASSWORD': 'qwerty1234',  # The password for that user
-            'HOST': 'localhost',             # Or the IP/hostname of your PostgreSQL server
-            'PORT': '5432',                  # Default PostgreSQL port
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv("NEON_DB_NAME"),
+        'USER': os.getenv("NEON_DB_USER"),
+        'PASSWORD': os.getenv("NEON_DB_PASSWORD"),
+        'HOST': os.getenv("NEON_DB_HOST"),
+        'PORT': '5432',
+        'OPTIONS': {
+            'sslmode': 'require',
         }
+    }
 }
 
 

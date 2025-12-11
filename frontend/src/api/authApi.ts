@@ -2,9 +2,10 @@
 import axios from "axios";
 import type { LoginPayload, RegisterPayload } from "@/types/apiPayloads";
 import type { User, LoginResponse } from "@/types/apiResponse";
+import { API_BASE_URL } from "./apiConfig";
 
 // Django backend base URL
-const BASE_URL = "http://127.0.0.1:8000/api";
+const BASE_URL = `${API_BASE_URL}`;
 
 // --------------------------- AXIOS INSTANCE ---------------------------
 
