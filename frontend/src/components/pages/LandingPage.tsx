@@ -11,7 +11,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen grid grid-cols-1 sm:grid-cols-2 ">
       {/* Left Side — Hero Image with Overlay */}
-      <div className="relative flex items-center justify-center min-h-48 shadow-2xl pb-6">
+      <div className="relative  hidden sm:flex items-center justify-center min-h-48 shadow-2xl pb-6">
         {/* Background Image */}
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -38,6 +38,7 @@ export default function LandingPage() {
       {/* Right Side — Auth Tabs */}
       <div className="flex flex-col justify-center items-center p-8 bg-background text-foreground bg-linear-to-tr from-background via-foreground/10 to-background">
         <div className="w-full max-w-md space-y-6">
+          <h2 className="text-center mb-12 text-4xl font-bold text-gradient-maroon block sm:hidden">HCDC Lost and Found</h2>
           <Tabs value={tab} onValueChange={setTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="signin" className="text-sm font-medium">
