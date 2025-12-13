@@ -49,8 +49,8 @@ export function LogsModal({ open, onClose }: LogsModalProps) {
 
       // Handle absolute URLs (DRF behavior)
       const url = nextPage.startsWith("http")
-        ? nextPage.replace("http://127.0.0.1:8000/api", "")
-        : nextPage;
+        ? nextPage.replace(/^(?:http|https):\/\/[^/]+\/api/, "") // remove domain + /api
+        : nextPage.replace(/^\/api/, ""); // remove leading /api if relative
 
       const res = await api.get<ReportResolutionLogResponse>(url);
       const data = res.data;

@@ -4,9 +4,9 @@ import axios from "axios";
 import type { PaginatedResponse, Report } from "@/types/apiResponse";
 import type { CreateReportPayload } from "@/types/apiPayloads";
 import { compressImage } from "@/utils/imageUtils";
+import { API_BASE_URL } from "@/api/apiConfig";
 
-const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+const BASE_URL = API_BASE_URL
 
 interface UseReportsOptions {
   type?: "lost" | "found";

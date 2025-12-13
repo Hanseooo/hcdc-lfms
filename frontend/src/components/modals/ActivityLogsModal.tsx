@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/api/axiosInstance";
 import { toast } from "sonner";
 import type { ActivityLog, ActivityLogResponse } from "@/types/apiResponse";
+import { API_BASE_URL } from "@/api/apiConfig";
 
 interface ActivityLogsModalProps {
   open: boolean;
@@ -38,10 +39,11 @@ export function ActivityLogsModal({ open, onClose }: ActivityLogsModalProps) {
 
       // Strip full domain if DRF gives absolute URL
       const url = nextPage.startsWith("http")
-        ? nextPage.replace("http://127.0.0.1:8000/api", "")
-        : nextPage;
+        ? nextPage.replace(/^(?:http|https):\/\/[^/]+\/api/, "") // remove domain + /api
+        : nextPage.replace(/^\/api/, ""); // remove leading /api if relative
 
       const res = await api.get<ActivityLogResponse>(url);
+
       const data = res.data;
 
       setLogs((prev) => [...prev, ...data.results]);

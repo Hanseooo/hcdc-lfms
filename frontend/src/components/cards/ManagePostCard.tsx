@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import axios from "axios";
 import type { Report } from "@/types/apiResponse";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/api/apiConfig";
 
 interface ManagePostCardProps {
   report: Report;
@@ -30,7 +31,7 @@ export default function ManagePostCard({
     try {
       setUpdating(true);
     await axios.patch(
-    `http://127.0.0.1:8000/api/reports/reports/${report.id}/`,
+    `${API_BASE_URL}/reports/reports/${report.id}/`,
     { status: newStatus },
         {
             headers: {
