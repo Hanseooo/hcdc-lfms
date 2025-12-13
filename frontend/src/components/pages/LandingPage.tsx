@@ -4,6 +4,7 @@ import { useState } from "react";
 import SignInForm from "@/components/forms/auth/SignInForm";
 import RegisterForm from "@/components/forms/auth/RegisterForm";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import hcdcBuilding from "@/assets/images/hcdc-building.png";
 
 export default function LandingPage() {
   const [tab, setTab] = useState("signin");
@@ -16,7 +17,7 @@ export default function LandingPage() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: "url('/src/assets/images/hcdc-building.png')",
+            backgroundImage: `url(${hcdcBuilding})`,
           }}
         />
         {/* Dark Overlay */}
