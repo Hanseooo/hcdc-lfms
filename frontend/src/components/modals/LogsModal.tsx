@@ -191,7 +191,7 @@ export function LogsModal({ open, onClose }: LogsModalProps) {
             <div className="flex justify-center mt-4">
               <button
                 onClick={fetchResolutionLogs}
-                className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/80 transition-colors flex items-center gap-2"
+                className="bg-primary text-white px-4 py-2 mb-2 rounded-md hover:bg-primary/80 transition-colors flex items-center gap-2"
               >
                 Load More
               </button>
