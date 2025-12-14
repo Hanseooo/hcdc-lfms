@@ -37,7 +37,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 DEBUG = False
 
 ALLOWED_HOSTS = [
-    "hcdc-lfms-production.up.railway.app",
+    "*",
     # "hcdc-lfms.vercel.app",
     ]
 
@@ -121,10 +121,7 @@ REST_FRAMEWORK = {
 
 
 CORS_ALLOWED_ORIGINS =[
-    "http://localhost:5173",
-    "http://hcdc-lfms-production.up.railway.app",
-    # "hcdc-lfms.vercel.app",
-    "https://hcdc-lfms.vercel.app",
+    "*",
 
 ]
 
