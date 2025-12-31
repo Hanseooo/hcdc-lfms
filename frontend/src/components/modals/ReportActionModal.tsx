@@ -15,6 +15,7 @@ import type { ReportActionPayload } from "@/types/apiPayloads";
 import type { Report } from "@/types/apiResponse";
 import { ReportInfoCard } from "../cards/ReportInfoCard";
 import axios from "axios";
+import { API_BASE_URL } from "@/api/apiConfig";
 
 interface ReportActionModalProps {
   open: boolean;
@@ -23,7 +24,7 @@ interface ReportActionModalProps {
   actionType: "claim" | "found";
 }
 
-const BASE_URL = "http://127.0.0.1:8000/api";
+const BASE_URL = API_BASE_URL;
 
 export function ReportActionModal({
   open,
